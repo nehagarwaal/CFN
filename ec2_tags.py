@@ -12,18 +12,18 @@ def get_ec2_client():
 def add_ec2_tags(ec2_client):
     response = ec2_client.create_tags(
     Resources=[
-        'i-0749c2995a810daec',
-        'i-0eb80439ce0fe406d',
-        'i-0ed4e800c4827a89e'
+        'xxxxxxxx',
+        'xxxxxxxx',
+        'xxxxxxxx'
     ],
     Tags=[
         {
             'Key': 'ApplicationOwner',
-            'Value': 'pkawale@tavisca.com'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'ProductOwner',
-            'Value': 'pkawale@tavisca.com'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'Purpose',
@@ -31,7 +31,7 @@ def add_ec2_tags(ec2_client):
         },
         {
             'Key': 'Name',
-            'Value': 'Flights-RabbitMQ'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'ApplicationRole',
