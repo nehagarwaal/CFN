@@ -10,11 +10,11 @@ def add_s3_tags(bucket_tagging):
         'TagSet': [
         {
             'Key': 'ApplicationOwner',
-            'Value': 'pkawale@tavisca.com'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'ProductOwner',
-            'Value': 'pkawale@tavisca.com'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'Purpose',
@@ -22,7 +22,7 @@ def add_s3_tags(bucket_tagging):
         },
         {
             'Key': 'Name',
-            'Value': 'flights-order-db'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'ApplicationRole',
@@ -30,7 +30,7 @@ def add_s3_tags(bucket_tagging):
         },
         {
             'Key': 'Environment',
-            'Value': 'travel-prod'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'Product',
@@ -44,7 +44,7 @@ def add_s3_tags(bucket_tagging):
 
 def main():
     s3 = boto3.resource('s3')
-    bucket_tagging = s3.BucketTagging('flights-order-db')
+    bucket_tagging = s3.BucketTagging('xxxxxxxx')
     add_s3_tags(bucket_tagging)
 if __name__ == "__main__":
     main()
