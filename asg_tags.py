@@ -13,52 +13,52 @@ def add_asg_tags(asg_client):
     response = asg_client.create_or_update_tags(
     Tags=[
         {
-            'ResourceId': 'Flights-RabbitMQ',
+            'ResourceId': 'xxxxxxxx',
             'ResourceType': 'auto-scaling-group',
             'Key': 'ApplicationOwner',
             'Value': 'pkawale@tavisca.com',
             'PropagateAtLaunch': True
         },
         {
-            'ResourceId': 'Flights-RabbitMQ',
+            'ResourceId': 'xxxxxxxx',
             'ResourceType': 'auto-scaling-group',
             'Key': 'ProductOwner',
-            'Value': 'pkawale@tavisca.com',
+            'Value': 'xxxxxxxx',
             'PropagateAtLaunch': True
         },
         {
-            'ResourceId': 'Flights-RabbitMQ',
+            'ResourceId': 'xxxxxxxx',
             'ResourceType': 'auto-scaling-group',
             'Key': 'Purpose',
             'Value': 'Business',
             'PropagateAtLaunch': True
         },
         {
-            'ResourceId': 'Flights-RabbitMQ',
+            'ResourceId': 'xxxxxxxx',
             'ResourceType': 'auto-scaling-group',
             'Key': 'Name',
-            'Value': 'Flights-RabbitMQ',
+            'Value': 'xxxxxxxx',
             'PropagateAtLaunch': True
         },
         {
-            'ResourceId': 'Flights-RabbitMQ',
+            'ResourceId': 'xxxxxxxx',
             'ResourceType': 'auto-scaling-group',
             'Key': 'ApplicationRole',
-            'Value': 'RMQ',
+            'Value': 'xxxxxxxx',
             'PropagateAtLaunch': True
         },
         {
-            'ResourceId': 'Flights-RabbitMQ',
+            'ResourceId': 'xxxxxxxx',
             'ResourceType': 'auto-scaling-group',
             'Key': 'Environment',
-            'Value': 'travel-prod',
+            'Value': 'xxxxxxxx',
             'PropagateAtLaunch': True
         },
         {
-            'ResourceId': 'Flights-RabbitMQ',
+            'ResourceId': 'xxxxxxxx',
             'ResourceType': 'auto-scaling-group',
             'Key': 'Product',
-            'Value': 'Flights',
+            'Value': 'xxxxxxxx',
             'PropagateAtLaunch': True
         }        
     ])
