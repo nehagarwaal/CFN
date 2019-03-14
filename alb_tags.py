@@ -12,16 +12,16 @@ def get_alb_client():
 def add_alb_tags(alb_client):
     response = alb_client.add_tags(
     ResourceArns=[
-        'arn:aws:elasticloadbalancing:us-east-1:095218890333:loadbalancer/app/flight-stats-ALB/0e4263fc224a3fca',
+        'arn:aws:xxxxxxxx',
     ],
     Tags=[
         {
             'Key': 'ApplicationOwner',
-            'Value': 'pkawale@tavisca.com'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'ProductOwner',
-            'Value': 'pkawale@tavisca.com'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'Purpose',
@@ -29,7 +29,7 @@ def add_alb_tags(alb_client):
         },
         {
             'Key': 'Name',
-            'Value': 'flight-stats-ALB'
+            'Value': 'xxxxxxxx'
         },
         {
             'Key': 'ApplicationRole',
@@ -41,7 +41,7 @@ def add_alb_tags(alb_client):
         },
         {
             'Key': 'Product',
-            'Value': 'Flights'
+            'Value': 'xxxxxxxx'
         }        
     ])
     print(response)
