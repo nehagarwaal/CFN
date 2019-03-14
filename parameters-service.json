@@ -1,0 +1,82 @@
+[ 
+    {
+      "ParameterKey": "VpcId",
+      "ParameterValue": "vpc_id"
+    },
+    {
+      "ParameterKey": "MetricName",
+      "ParameterValue": "metric_name"
+    },
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "env_stack"
+    },
+    {
+      "ParameterKey": "ReleaseCardNumber",
+      "ParameterValue": "release_card"
+    },
+    {
+      "ParameterKey": "DesiredCount",
+      "ParameterValue": "desired_count"
+    },
+    {
+      "ParameterKey": "MaxCount",
+      "ParameterValue": "max_count"
+    },
+    {
+      "ParameterKey": "MinCount",
+      "ParameterValue": "min_count"
+    },
+    {
+      "ParameterKey": "Repository",
+      "ParameterValue": "ecr_repository"
+    },
+    {
+      "ParameterKey": "Product",
+      "ParameterValue": "product"
+    },
+    {
+      "ParameterKey": "ApplicationName",
+      "ParameterValue": "app_name"
+    },
+    {
+      "ParameterKey": "ApplicationType",
+      "ParameterValue": "app_type"
+    },
+    {
+      "ParameterKey": "HealthCheckPath",
+      "ParameterValue": "healthcheckpath"
+    },
+    {
+      "ParameterKey": "ControllerPath",
+      "ParameterValue": "controller_path"
+    },
+    {
+      "ParameterKey": "Priority",
+      "ParameterValue": "priorityNum"
+    },
+    {
+      "ParameterKey": "Region",
+      "ParameterValue": "region"
+    },
+    {
+      "ParameterKey": "MemoryReservation",
+      "ParameterValue": "soft_limit"
+    },
+    {
+      "ParameterKey": "Memory",
+      "ParameterValue": "hard_limit"
+    },
+    {
+      "ParameterKey": "ImportStack",
+      "ParameterValue": "import_stack"
+    },
+    {
+      "ParameterKey": "LoadBalancerHealthCheckPort",
+      "ParameterValue": "alb_health_port"
+    },
+    {
+      "ParameterKey": "ExistingECSTargetGroup",
+      "ParameterValue": "existing_target_group"
+    }
+  ]

@@ -1,0 +1,502 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+      "KeyName": {
+        "Type": "AWS::EC2::KeyPair::KeyName",
+        "Description": "Name of an existing EC2 KeyPair to enable SSH access to the ECS instances."
+      },
+      "IAMInstanceProfileRole":{
+        "Type": "String",
+        "Default": "spinnakerRole",
+        "Description": "IAM Instance Profile Role to be attached on INSTANCE"
+      },
+      "VpcId": {
+        "Type": "AWS::EC2::VPC::Id",
+        "Description": "Select a VPC that allows instances to access the Internet."
+      },
+      "ApplicationSubnets": {
+        "Type": "List<AWS::EC2::Subnet::Id>",
+        "Description": "Select at least two application subnets in your selected VPC."
+      },
+      "WebSubnets": {
+        "Type": "List<AWS::EC2::Subnet::Id>",
+        "Description": "Select atleast two web subnets in your selected VPC."
+      },
+      "Environment": {
+        "Type": "String",
+        "Description": "Environment Name : travel-qa/travel-stage/travel-prod/pci-qa/pci-stage/pci-prod",
+        "AllowedValues": [
+          "travel-qa",
+		      "pci-qa",
+          "travel-stage",
+		      "pci-stage",
+          "travel-prod",
+          "pci-prod",
+          "toolchain"
+        ]
+      },
+      "DesiredCapacity": {
+        "Type": "Number",
+        "Default": "1",
+        "Description": "Number of instances to launch in your ECS cluster."
+      },
+      "MaxCapacity": {
+        "Type": "Number",
+        "Default": "1",
+        "Description": "Maximum number of instances that can be launched in your ECS cluster."
+      },
+      "MinCapacity": {
+        "Type": "Number",
+        "Default": "1",
+        "Description": "Maximum number of instances that can be launched in your ECS cluster."
+      },
+      "Region": {
+        "Description": "Region to deploy this infrastructure",
+        "Type": "String",
+        "Default": "us-east-1",
+        "AllowedValues": [
+          "us-east-1"
+        ],
+        "ConstraintDescription": "Please choose a Region to deploy this infrastructure"
+      },
+	   "EC2Subnets":{
+	   "Type": "String",
+        "Description": "EC2 Instance is Web or Application",
+        "AllowedValues": [ "web", "app" ]
+	  },
+      "InstanceType": {
+        "Description": "EC2 instance type",
+        "Type": "String",
+        "Default": "t2.micro",
+        "AllowedValues": [
+          "t2.micro",
+          "t2.small",
+          "t2.medium",
+          "m3.medium",
+          "c5.large",
+          "c5.xlarge",
+          "c4.large",
+          "c4.xlarge"
+        ],
+        "ConstraintDescription": "Please choose a valid instance type."
+      },
+      "CommonEC2SecurityGroups": {
+        "Type": "CommaDelimitedList",
+        "Description": "Common EC2 Security Groups"
+      }, 
+      "AMIID": {
+        "Type": "String",
+        "Description": "AMI_ID in the desired environment"
+      },
+      "AlertLogicApplianceHostIp": {
+        "Type": "String",
+        "Description": "Alert Logic Threat Manager Appliance IP"
+      },
+      "Product": {
+        "Type": "String",
+        "Description": "Product Name like Hotel/Car/Cart/Flight/Revenue/OCL"
+      },
+      "ApplicationName": {
+        "Type": "String",
+        "Description": "Application Name like Engine/USG"
+      }, 
+	  "ProductOwnerEmail": {
+        "Type": "String",
+        "Description": "Email ID of the product owner like xyz@tavisca.com"
+      },
+	    "ApplicationOwnerEmail": {
+        "Type": "String",
+        "Description": "Email ID of the application owner like xyz@tavisca.com"
+      },
+	  
+	  "Purpose":{
+	    "Type": "String",
+        "Description": "Purpose for creating this instance like POC/Business"
+      
+    },
+    "SNSTopicARN":{
+      "Type": "String",
+      "Description": "SNS topic for  ASG lifecycle hook"
+    },
+    "IAMRoleARN": {
+      "Type": "String",
+      "Description": "IAM Role for ASG lifecycle hook"
+    }
+    },
+    
+    "Conditions": {
+      "EC2CommonSGs": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              "",
+              {
+                "Fn::Join": [
+                  "",
+                  {
+                    "Ref": "CommonEC2SecurityGroups"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+		},
+	  "EC2SubnetSelector":{"Fn::Equals" : [{"Ref":"EC2Subnets"}, "web"]}
+    },
+	"Resources": {
+      "InstanceSecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+          "GroupName": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Ref": "Product"
+                },
+                {
+                  "Ref": "ApplicationName"
+                },
+		{
+                  "Ref": "InstanceType"
+                },
+                "EC2-SG"
+              ]
+            ]
+          },
+          "GroupDescription": "Allow http to client host",
+		   "SecurityGroupEgress": [
+      {
+        "CidrIp": "127.0.0.1/32",
+        "IpProtocol": "-1"
+      }
+    ],
+          "VpcId": {
+            "Ref": "VpcId"
+          },
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    {
+                      "Ref": "Product"
+                    },
+                    {
+                      "Ref": "ApplicationName"
+                    },  
+		    {
+                      "Ref": "InstanceType"
+               	    },	            
+                    "EC2-SG"
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "ASG": {
+        "Type": "AWS::AutoScaling::AutoScalingGroup",
+        "Properties": {
+          "VPCZoneIdentifier": 
+		  {
+			"Fn::If":["EC2SubnetSelector", {"Ref":"WebSubnets"}, {"Ref":"ApplicationSubnets"}]
+      },
+      "LifecycleHookSpecificationList" :[
+        {
+          "HeartbeatTimeout" : 900,
+          "LifecycleHookName" : {"Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Product"
+              },
+              {
+                "Ref": "ApplicationName"
+              },
+              "Lifecycle-hook"
+            ]
+          ]},
+          "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+          "NotificationTargetARN": {"Ref": "SNSTopicARN"},
+          "NotificationMetadata": {"Fn::ImportValue" : {"Fn::Sub" : ["${ImportStackName}-ECSCluster", {"ImportStackName": {"Fn::Join": ["-", [{"Ref": "Product"}, {"Ref": "ApplicationName"}, "Skeleton"]]}}]}},
+          "RoleARN": {"Ref": "IAMRoleARN"}
+        }
+      ],
+          "LaunchConfigurationName": {
+            "Ref": "ContainerInstances"
+          },
+          "MinSize": {
+            "Ref": "MinCapacity"
+          },
+          "MaxSize": {
+            "Ref": "MaxCapacity"
+          },
+          "DesiredCapacity": {
+            "Ref": "DesiredCapacity"
+          },
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    {
+                      "Ref": "Product"
+                    },
+                    {
+                      "Ref": "ApplicationName"
+                    },
+                    "ECS-EC2"
+                  ]
+                ]
+              },
+              "PropagateAtLaunch": "true"
+            },
+            {
+              "Key": "Environment",
+              "Value": {
+                "Ref": "Environment"
+              },
+              "PropagateAtLaunch": "true"
+            },
+            {
+              "Key": "Platform",
+              "Value": "Linux",
+              "PropagateAtLaunch": "true"
+            },
+            {
+              "Key": "Product",
+              "Value": {
+                "Ref": "Product"
+              },
+              "PropagateAtLaunch": "true"
+            },
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "ApplicationName"
+              },
+              "PropagateAtLaunch": "true"
+            }, 
+			{
+              "Key": "ApplicationRole",
+              "Value": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    {
+                      "Ref": "EC2Subnets"
+                    },
+                    
+                    "Server"
+                  ]
+                ]
+              },
+              "PropagateAtLaunch": "true"
+            },
+			 {
+              "Key": "ProductOwner",
+              "Value": {
+                "Ref": "ProductOwnerEmail"
+              },
+              "PropagateAtLaunch": "true"
+            },
+{
+              "Key": "ApplicationOwner",
+              "Value": {
+                "Ref": "ApplicationOwnerEmail"
+              },
+              "PropagateAtLaunch": "true"
+            },			
+			 
+            
+			 {
+              "Key": "Purpose",
+              "Value": {
+                "Ref": "Purpose"
+              },
+              "PropagateAtLaunch": "true"
+            }
+			  
+          ],
+		  
+        
+		"TerminationPolicies": ["OldestInstance"] 
+		
+		},
+        "CreationPolicy": {
+          "ResourceSignal": {
+            "Timeout": "PT15M"
+          }
+        },
+        "UpdatePolicy": {
+          "AutoScalingReplacingUpdate": {
+            "WillReplace": "true"
+          }
+        } 
+      },
+      "ScaleUpPolicy": {
+        "Type": "AWS::AutoScaling::ScalingPolicy",
+        "Properties": {
+          "AdjustmentType": "ChangeInCapacity",
+          "PolicyType": "SimpleScaling",
+          "Cooldown": "300",
+          "AutoScalingGroupName": {
+            "Ref": "ASG"
+          },
+          "ScalingAdjustment": 1
+        }
+      },
+      "ScaleDownPolicy": {
+        "Type": "AWS::AutoScaling::ScalingPolicy",
+        "Properties": {
+          "AdjustmentType": "ChangeInCapacity",
+          "PolicyType": "SimpleScaling",
+          "Cooldown": "300",
+          "AutoScalingGroupName": {
+            "Ref": "ASG"
+          },
+          "ScalingAdjustment": -1
+        }
+      },
+      "EcsAsgMemoryHighAlarm": {
+        "Type": "AWS::CloudWatch::Alarm",
+        "Properties": {
+          "AlarmDescription": "Memory alarm for ASG",
+          "AlarmActions": [
+            {
+              "Ref": "ScaleUpPolicy"
+            }
+          ],
+          "MetricName": "MemoryReservation",
+          "Namespace": "AWS/ECS",
+          "Statistic": "Average",
+          "Period": "60",
+          "EvaluationPeriods": "3",
+          "Threshold": "60",
+          "ComparisonOperator": "GreaterThanThreshold",
+          "Dimensions": [
+            {
+              "Name": "ClusterName",
+              "Value": {"Fn::ImportValue" : {"Fn::Sub" : ["${ImportStackName}-ECSCluster", {"ImportStackName": {"Fn::Join": ["-", [{"Ref": "Product"}, {"Ref": "ApplicationName"}, "Skeleton"]]}}]}}
+            }
+          ]
+        }
+      },
+      "EcsAsgMemoryLowAlarm": {
+        "Type": "AWS::CloudWatch::Alarm",
+        "Properties": {
+          "AlarmDescription": "Memory alarm for ASG",
+          "AlarmActions": [
+            {
+              "Ref": "ScaleDownPolicy"
+            }
+          ],
+          "MetricName": "MemoryReservation",
+          "Namespace": "AWS/ECS",
+          "Statistic": "Average",
+          "Period": "60",
+          "EvaluationPeriods": "5",
+          "Threshold": "30",
+          "ComparisonOperator": "LessThanThreshold",
+          "Dimensions": [
+            {
+              "Name": "ClusterName",
+              "Value": {"Fn::ImportValue" : {"Fn::Sub" : ["${ImportStackName}-ECSCluster", {"ImportStackName": {"Fn::Join": ["-", [{"Ref": "Product"}, {"Ref": "ApplicationName"}, "Skeleton"]]}}]}}
+            }
+          ]
+        }
+      },
+      "ContainerInstances": {
+        "Type": "AWS::AutoScaling::LaunchConfiguration",
+
+        "Properties": {
+          "ImageId": {
+            "Ref": "AMIID"
+          },
+          "SecurityGroups": {
+            "Fn::If": [
+              "EC2CommonSGs",
+              {
+                "Fn::Split": [
+                  ",",
+                  {
+                    "Fn::Join": [
+                      ",",
+                      [
+                        {
+                          "Ref": "InstanceSecurityGroup"
+                        },
+                        {
+                          "Fn::Join": [
+                            ",",
+                            {
+                              "Ref": "CommonEC2SecurityGroups"
+                            }
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                ]
+              },
+              {
+                "Fn::Split": [
+                  ",",
+                  {
+                    "Ref": "InstanceSecurityGroup"
+                  }
+                ]
+              }
+            ]
+          },
+          "InstanceType": {
+            "Ref": "InstanceType"
+          },
+          "IamInstanceProfile": {"Ref":"IAMInstanceProfileRole"},
+          "KeyName": {
+            "Ref": "KeyName"
+          },
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Join": [
+                "",
+                [
+                  "#!/bin/bash -xe\n",
+                  "echo ECS_CLUSTER=",
+                  {"Fn::ImportValue" : {"Fn::Sub" : ["${ImportStackName}-ECSCluster", {"ImportStackName": {"Fn::Join": ["-", [{"Ref": "Product"}, {"Ref": "ApplicationName"}, "Skeleton"]]}}]}},
+                  " >> /etc/ecs/ecs.config\n",
+                  "aws s3 cp s3://cnx-nextgen-devops/scripts/Ec2Init.sh ./Ec2Init.sh\n",
+                  "chmod 755 ./Ec2Init.sh\n",
+                  "./Ec2Init.sh ",
+                  {
+                    "Ref": "AlertLogicApplianceHostIp"
+                  },
+                  "\n",
+                  "/opt/import_users.sh SSH\n",
+                  "echo '*/5 * * * * root /opt/import_users.sh SSH' >> /etc/cron.d/import_users\n",
+                  "echo '0 12 * * * root /opt/delete_users.sh SSH' >> /etc/cron.d/delete_users\n",
+                  "/opt/aws/bin/cfn-signal -e $? ",
+                  "--stack ",
+                  {
+                    "Ref": "AWS::StackName"
+                  },
+                  " --resource ASG ",
+                  "--region ",
+                  {
+                    "Ref": "AWS::Region"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      }
+    }
+  }

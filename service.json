@@ -1,0 +1,412 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Parameters": {
+		"Environment": {
+			"Type": "String",
+			"Description": "Value of the environment: travel-qa/travel-stage/travel-prod/pci-qa/pci-stage/pci-prod",
+			"AllowedValues": [
+				"travel-qa",
+				"pci-qa",
+				"travel-stage",
+				"pci-stage",
+				"travel-prod",
+				"pci-prod",
+				"toolchain"
+			  ]
+		},
+		"InstanceType": {
+			"Description": "EC2 instance type",
+			"Type": "String",
+			"Default": "t2.micro",
+			"ConstraintDescription": "Please choose a valid instance type from skeleton to place the containers."
+		  },
+		"Region": {
+			"Description": "Region to deploy this infrastructure",
+			"Type": "String",
+			"Default": "us-east-1",
+			"AllowedValues": [
+				"us-east-1"
+			],
+			"ConstraintDescription": "Please choose a Region to deploy this infrastructure"
+		},
+		"MetricName":{
+			"Description": "Metric Name to apply autoscaling policies on",
+			"Type": "String",
+			"Default": "CPUUtilization"
+		},
+		"VpcId": {
+			"Type": "AWS::EC2::VPC::Id",
+			"Description": "Select a VPC that allows instances to access the Internet."
+		},
+		"Priority": {
+			"Type": "Number",
+			"Description": "Priority of the Service in ALB Listener Rules"
+		},
+		"HealthCheckPath": {
+			"Type": "String",
+			"Description": "Healthcheck Path of Service"
+		},
+		"ReleaseCardNumber": {
+			"Type": "String",
+			"Description": "Docker image tag"
+		},
+		"DesiredCount": {
+			"Type": "Number",
+			"Description": "Desired container count"
+		},
+		"MaxCount": {
+			"Type": "Number",
+			"Description": "Maximum count of ECS containers"
+		},
+		"MinCount": {
+			"Type": "Number",
+			"Default": 2,
+			"Description": "Minimun count of ECS containers"
+		},
+		"ControllerPath": {
+			"Type": "String",
+			"Description": "ControllerPath of the ALB Listner Rule."
+		},
+		"Repository": {
+			"Type": "String",
+			"Description": "ECR Repository"
+		},
+		"ImportStack": {
+			"Type": "String",
+			"Description": "Stackname that will output value"
+		},
+		"MemoryReservation":{
+			"Type": "Number",
+			"Description":"Soft Limit for the container instance"
+		},
+		"Memory":{
+			"Type": "Number",
+			"Description":"Hard Limit for the container instance"
+		},
+		"Product":{
+			"Type": "String",
+			"Description":"Product Name like Hotel/Car/Cart/Flight/Revenue/OCL"
+		  },
+		  "ApplicationName":{
+			"Type": "String",
+			"Description":"Application Name like Engine/USG/ and Name of Connector in case of supplier"
+		  },
+		  "ApplicationType":{
+			"Type": "String",
+			"Description":"type of service service/webservice/connector"
+		  },
+		  "LoadBalancerHealthCheckPort":{
+			"Type": "Number",
+			"Description":"HealthCheckPort for LoadBalancer"
+		  },
+		  "ExistingECSTargetGroup": {
+			"Type": "String",
+			"Description": "Name of existing TG to attach this service to"
+		}
+	},
+	"Conditions" : {
+		"CreateTG" : {"Fn::Equals" : [{"Ref" : "ExistingECSTargetGroup"}, ""]}
+	  },
+	"Resources": {
+		"ECSTargetGroup": {
+			"Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+			"Condition" : "CreateTG",
+			"Properties": {
+				"HealthCheckIntervalSeconds": 20,
+				"HealthCheckPath": {
+					"Ref": "HealthCheckPath"
+				},
+				"HealthCheckProtocol": "HTTP",
+				"HealthCheckTimeoutSeconds": 5,
+				"HealthyThresholdCount": 2,
+				"Name":{ "Fn::Join" : ["-",[{"Ref" : "Product"},{"Ref" : "ApplicationName"},{"Ref" : "ApplicationType"},"TG"]]},
+				"Port": 80,
+				"Protocol": "HTTP",
+				"UnhealthyThresholdCount": 10,
+				"VpcId": {
+					"Ref": "VpcId"
+				}
+			}
+		},
+
+		"PrivateECSALBListenerRule": {
+			"Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+			"Condition" : "CreateTG",
+			"DependsOn": "ECSTargetGroup",
+			"Properties": {
+				"Actions": [{
+					"Type": "forward",
+					"TargetGroupArn": {
+						"Ref": "ECSTargetGroup"
+					}
+				}],
+				"Conditions": [{
+					"Field": "path-pattern",
+					"Values": [{
+						"Ref": "ControllerPath"
+					}]
+				}],
+				"ListenerArn": {
+					"Fn::ImportValue": {
+						"Fn::Sub": "${ImportStack}-TargetGroupListenerARN"
+					}
+				},
+
+				"Priority": {
+					"Ref": "Priority"
+				}
+			}
+		},
+
+		"ECSTaskDefinition": {
+			"Type": "AWS::ECS::TaskDefinition",
+			"Properties": {
+				"Family": { "Fn::Join" : ["-",[{"Ref" : "Product"},{"Ref" : "ApplicationName"},{"Ref" : "ApplicationType"}]]},
+				"NetworkMode": "bridge",
+				"ContainerDefinitions": [{
+					"Environment": environment_variables,
+					"LogConfiguration": {
+						"LogDriver": "awslogs",
+						"Options": {
+							"awslogs-group": {"Fn::ImportValue" : {"Fn::Sub" : "${ImportStack}-LogGroup"}},
+							"awslogs-region": "us-east-1",
+							"awslogs-stream-prefix":{ "Fn::Join" : ["-",[{"Ref" : "Product"},{"Ref" : "ApplicationName"},{"Ref" : "ApplicationType"}]]}
+						}
+					},
+					"Image": {
+						"Ref": "Repository"
+					},
+					"Memory": {"Ref":"Memory"},
+					"MemoryReservation": {"Ref":"MemoryReservation"},
+					"Name": { "Fn::Join" : ["-",[{"Ref" : "ApplicationName"},{"Ref" : "ApplicationType"}]]},
+					"PortMappings": port_mappings 
+				}]
+			}
+		},
+		"ECSService": {
+			"Type": "AWS::ECS::Service",
+			"Properties": {
+				"Cluster": {"Fn::ImportValue" : {"Fn::Sub" : "${ImportStack}-ECSCluster"}},
+				"DeploymentConfiguration": {
+					"MaximumPercent": 200,
+					"MinimumHealthyPercent": 100
+				},
+				"DesiredCount": {
+					"Ref": "DesiredCount"	
+				},
+				"LaunchType": "EC2",
+				"LoadBalancers": [{
+					"ContainerName": { "Fn::Join" : ["-",[{"Ref" : "ApplicationName"},{"Ref" : "ApplicationType"}]]},
+					"ContainerPort": {"Ref":"LoadBalancerHealthCheckPort"},
+					"TargetGroupArn": {"Fn::If": [
+						"CreateTG", {"Fn::GetAtt": ["ECSTargetGroup", "TargetGroupName"]}, {"Ref": "ExistingECSTargetGroup"}]}					
+				}],
+				"PlacementStrategies": [{
+						"Field": "attribute:ecs.availability-zone",
+						"Type": "spread"
+					},
+					{
+						"Field": "memory",
+						"Type": "binpack"
+					}
+				],
+				"PlacementConstraints": [
+					{
+					"Type": "memberOf",
+					"Expression": "attribute:ecs.instance-type == selectedinstancetype"
+					}
+				],
+				"TaskDefinition": {
+					"Ref": "ECSTaskDefinition"
+				}
+			}
+		},
+		"AutoscalingRole":{
+			"Type":"AWS::IAM::Role",
+			"Properties":{
+			  "AssumeRolePolicyDocument":{
+				"Statement":[
+				  {
+					"Effect":"Allow",
+					"Principal":{
+					  "Service":[
+						"application-autoscaling.amazonaws.com"
+					  ]
+					},
+					"Action":[
+					  "sts:AssumeRole"
+					]
+				  }
+				]
+			  },
+			  "Path":"/",
+			  "Policies":[
+				{
+				  "PolicyName":"service-autoscaling",
+				  "PolicyDocument":{
+					"Statement":[
+					  {
+						"Effect":"Allow",
+						"Action":[
+						  "application-autoscaling:*",
+						  "cloudwatch:DescribeAlarms",
+						  "cloudwatch:PutMetricAlarm",
+						  "ecs:DescribeServices",
+						  "ecs:UpdateService"
+						],
+						"Resource":"*"
+					  }
+					]
+				  }
+				}
+			  ]
+			}
+		  },
+
+		"ServiceScalingTarget": {
+			"Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+			"DependsOn": "ECSService",
+			"Properties": {
+				"MaxCapacity": {
+					"Ref": "MaxCount"
+				},
+				"MinCapacity": {
+					"Ref": "MinCount"
+				},
+				"ResourceId": {
+					"Fn::Join": [
+						"", [
+							"service/",
+							{"Fn::ImportValue" : {"Fn::Sub" : "${ImportStack}-ECSCluster"}},
+							"/",
+							{
+								"Fn::GetAtt": [
+									"ECSService",
+									"Name"
+								]
+							}
+						]
+					]
+				},
+				"RoleARN": { "Fn::GetAtt" : ["AutoscalingRole", "Arn"] },
+				"ScalableDimension": "ecs:service:DesiredCount",
+				"ServiceNamespace": "ecs"
+			}
+		},
+		"ServiceScalingUpPolicy": {
+			"Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+			"Properties": {
+				"PolicyName": "StepUpPolicy",
+				"PolicyType": "StepScaling",
+				"ScalingTargetId": {
+					"Ref": "ServiceScalingTarget"
+				},
+				"StepScalingPolicyConfiguration": {
+					"AdjustmentType": "ChangeInCapacity",
+					"Cooldown": 60,
+					"MetricAggregationType": "Average",
+					"StepAdjustments": [{
+						"MetricIntervalLowerBound": 0,
+						"ScalingAdjustment": 1
+					}]
+				}
+			}
+		},
+		"ServiceScalingDownPolicy": {
+			"Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+			"Properties": {
+				"PolicyName": "StepDownPolicy",
+				"PolicyType": "StepScaling",
+				"ScalingTargetId": {
+					"Ref": "ServiceScalingTarget"
+				},
+				"StepScalingPolicyConfiguration": {
+					"AdjustmentType": "ChangeInCapacity",
+					"Cooldown": 60,
+					"MetricAggregationType": "Average",
+					"StepAdjustments": [{
+						"MetricIntervalLowerBound": 0,
+						"ScalingAdjustment": -1
+					}]
+				}
+			}
+		},
+		"EcsMemoryHighAlarm": {
+			"Type": "AWS::CloudWatch::Alarm",
+			"Properties": {
+				"AlarmDescription": "Memory alarm for FlightEngineASG",
+				"AlarmActions": [{
+					"Ref": "ServiceScalingUpPolicy"
+				}],
+				"MetricName": {"Ref": "MetricName"},
+				"Namespace": "AWS/ECS",
+				"Statistic": "Average",
+				"Period": "60",
+				"EvaluationPeriods": "3",
+				"Threshold": "60",
+				"ComparisonOperator": "GreaterThanThreshold",
+				"Dimensions": [{
+						"Name": "ClusterName",
+						"Value": {"Fn::ImportValue" : {"Fn::Sub" : "${ImportStack}-ECSCluster"}}
+					},
+					{
+						"Name": "ServiceName",
+						"Value": {
+							"Fn::GetAtt": [
+								"ECSService",
+								"Name"
+							]
+						}
+					}
+				]
+			}
+		},
+		"EcsMemoryLowAlarm": {
+			"Type": "AWS::CloudWatch::Alarm",
+			"Properties": {
+				"AlarmDescription": "Memory alarm for FlightEngineASG",
+				"AlarmActions": [{
+					"Ref": "ServiceScalingDownPolicy"
+				}],
+				"MetricName": {"Ref": "MetricName"},
+				"Namespace": "AWS/ECS",
+				"Statistic": "Average",
+				"Period": "60",
+				"EvaluationPeriods": "3",
+				"Threshold": "30",
+				"ComparisonOperator": "LessThanThreshold",
+				"Dimensions": [{
+						"Name": "ClusterName",
+						"Value": {"Fn::ImportValue" : {"Fn::Sub" : "${ImportStack}-ECSCluster"}}
+					},
+
+					{
+						"Name": "ServiceName",
+						"Value": {
+							"Fn::GetAtt": [
+								"ECSService",
+								"Name"
+							]
+						}
+					}
+				]
+			}
+		}
+	},
+	"Outputs": {
+		"targetgroup": {
+			"Value": {"Fn::If" : [
+					"CreateTG",
+					{"Ref" : "ECSTargetGroup"},
+					{"Ref" : "ExistingECSTargetGroup"}
+				  ]
+			   }
+			
+		},
+		"taskdef": {
+			"Value": {
+				"Ref": "ECSTaskDefinition"
+			}
+		}
+	}
+}

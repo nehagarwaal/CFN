@@ -1,0 +1,54 @@
+[ 
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "environment"
+    },
+    {
+      "ParameterKey": "VpcId",
+      "ParameterValue": "vpc_id"
+    },
+    {
+      "ParameterKey": "PublicSubnets",
+      "ParameterValue": "public_subnets"
+    },
+    {
+      "ParameterKey": "WebSubnets",
+      "ParameterValue": "web_subnets"
+    },
+    {
+      "ParameterKey": "ALBSubnets",
+      "ParameterValue": "Alb_Subnet"
+    },  
+	{
+      "ParameterKey": "CommonALBSecurityGroups",
+      "ParameterValue": "Alb_common-security_groups"
+    },
+    {
+      "ParameterKey": "Region",
+      "ParameterValue": "region"
+    },
+    {
+      "ParameterKey": "CertificateARN",
+      "ParameterValue": "certificate_arn"
+    },
+    {
+      "ParameterKey": "Product",
+      "ParameterValue": "product"
+    },
+    {
+      "ParameterKey": "ApplicationName",
+      "ParameterValue": "app_name"
+    },
+	{
+      "ParameterKey": "ProductOwnerEmail",
+      "ParameterValue": "Products_owner_email"
+    },
+	{
+      "ParameterKey": "ApplicationOwnerEmail",
+      "ParameterValue": "application_owner_email"
+    },
+	{
+      "ParameterKey": "Purpose",
+      "ParameterValue": "purpose"
+    }
+  ]
