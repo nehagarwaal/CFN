@@ -11,16 +11,16 @@ def get_lambda_client():
 
 def add_lambda_tags(lambda_client):
     response = lambda_client.tag_resource(
-    Resource='arn:aws:lambda:us-east-1:095218890333:function:flights_rabbitmq_nodes',
+    Resource='arn:aws:xxxxxxxx',
     Tags=
         {
-                'ApplicationOwner': 'pkawale@tavisca.com',
-                'ProductOwner': 'pkawale@tavisca.com',
-                'Purpose': 'Business',
-                'Name': 'flights_rabbitmq_nodes',
+                'ApplicationOwner': 'xxxxxxxx',
+                'ProductOwner': 'xxxxxxxx',
+                'Purpose': 'xxxxxxxx',
+                'Name': 'xxxxxxxx',
                 'ApplicationRole': 'Lambda function',
-                'Environment': 'travel-prod',
-                'Product': 'Flights'            
+                'Environment': 'xxxxxxxx',
+                'Product': 'xxxxxxxx'            
         }      
     )
     print(response)
