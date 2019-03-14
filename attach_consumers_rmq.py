@@ -4,14 +4,14 @@ import boto3
 import os
 import json
 
-rabbitmq_endpoint = "http://air-rabbitmq-n1.stage.cnxloyalty.com"
-rabbitmq_username = "flight"
-rabbitmq_password = "flight"
-rabbitmq_port = "15672"
-rabbitmq_virtual_host = "air"
-rabbitmq_queue_name = "air.search"
-ecs_cluster_name = "Flights-Engine"
-ecs_service_name = "Engine-WorkerAPP"
+rabbitmq_endpoint = "http://xxxx"
+rabbitmq_username = "xx"
+rabbitmq_password = "xx"
+rabbitmq_port = "xxx"
+rabbitmq_virtual_host = "xx"
+rabbitmq_queue_name = "xx"
+ecs_cluster_name = "xx"
+ecs_service_name = "xx"
 
 #Creating ECS boto3 client
 def get_ecs_client():
@@ -95,7 +95,7 @@ def update_ecs_service(ecs_scaling_client,service_task_count):
     if service_task_count == maximum_containers:
         response_update = ecs_scaling_client.register_scalable_target(
         ServiceNamespace = "ecs",
-        ResourceId = "service/Flights-Engine/Engine-WorkerAPP",
+        ResourceId = "xxxx",
         ScalableDimension = 'ecs:service:DesiredCount',        
         MaxCapacity = maximum_containers + 2,
         MinCapacity = minimum_containers + 1,
@@ -104,11 +104,11 @@ def update_ecs_service(ecs_scaling_client,service_task_count):
     elif service_task_count < maximum_containers:
         response_update = ecs_scaling_client.register_scalable_target(
         ServiceNamespace = "ecs",
-        ResourceId = "service/Flights-Engine/Engine-WorkerAPP",
+        ResourceId = "xxxx",
         ScalableDimension = 'ecs:service:DesiredCount',
         MinCapacity = minimum_containers + 1,
         MaxCapacity = maximum_containers + 1,
-        RoleARN = "arn:aws:iam::922451091924:role/spinnakerRole"
+        RoleARN = "xxx"
         )
         print(response_update)
 
