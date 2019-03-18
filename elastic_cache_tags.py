@@ -11,39 +11,38 @@ def get_ec_client():
 
 def add_ec_tags(ec_client):
     response = ec_client.add_tags_to_resource(
-    ResourceName=[
-        'arn:aws:xxxxxxxx',
-    ],
-    Tags=[
+     ResourceName='xx',
+     Tags=[
         {
             'Key': 'ApplicationOwner',
-            'Value': 'xxxxxxxx'
+            'Value': 'xx'
         },
         {
             'Key': 'ProductOwner',
-            'Value': 'xxxxxxxx'
+            'Value': 'xx'
         },
         {
             'Key': 'Purpose',
-            'Value': 'Business'
+            'Value': 'xx'
         },
         {
             'Key': 'Name',
-            'Value': 'xxxxxxxx'
+            'Value': 'xx'
         },
         {
             'Key': 'ApplicationRole',
-            'Value': 'Cache'
+            'Value': 'xx'
         },
         {
             'Key': 'Environment',
-            'Value': 'xxxxxxxx'
+            'Value': 'xx'
         },
         {
             'Key': 'Product',
-            'Value': 'xxxxxxxx'
+            'Value': 'xx'
         }        
-    ])
+     ]
+    )
     print(response)
 
 
@@ -53,4 +52,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
