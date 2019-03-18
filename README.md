@@ -1,4 +1,4 @@
-# nextgen-air-infrastructure
+# Multiple ASG in ECS Cluster
 Repository for Nextgen Air Infrastructure Codebase
 
 The current infrastructure includes single cloudformation script that deploys following major components:
