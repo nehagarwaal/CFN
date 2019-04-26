@@ -41,6 +41,9 @@ This will return an array of container capacity per instance.
 
 The next step is to set up two CloudWatch Alarms to scale up and scale down the ECS Cluster as per thresholds set on this metric.
 
+To get the Python script, kindly navigate to this link:
+https://github.com/nehagarwaal/Scripts/blob/python/scale_flights_engine_asg.py
+
 **Key points to keep in mind:**
 
 3 parameters to run this lambda function: cluster_name, container_cpu_cores, container_soft_limit
