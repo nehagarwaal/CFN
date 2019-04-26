@@ -22,7 +22,7 @@ For that we will trigger a scale down CloudWatch alarm that will make sure to ke
 
 **Infrastructure of the solution:**
 
-https://github.com/nehagarwaal/Scripts/blob/python/ECS_Cluster_Scaling_Infra.PNG
+![alt tag](https://github.com/nehagarwaal/Scripts/blob/python/ECS_Cluster_Scaling_Infra.PNG)
 
 **Lambda function algorithm:**
 
