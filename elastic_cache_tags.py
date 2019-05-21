@@ -11,39 +11,38 @@ def get_ec_client():
 
 def add_ec_tags(ec_client):
     response = ec_client.add_tags_to_resource(
-    ResourceName=[
-        'arn:aws:elasticache:us-east-1:922451091924:flights-dataapicache:flights-dataapicache-001',
-    ],
-    Tags=[
+     ResourceName='xx',
+     Tags=[
         {
             'Key': 'ApplicationOwner',
-            'Value': 'pkawale@tavisca.com'
+            'Value': 'xx'
         },
         {
             'Key': 'ProductOwner',
-            'Value': 'pkawale@tavisca.com'
+            'Value': 'xx'
         },
         {
             'Key': 'Purpose',
-            'Value': 'Business'
+            'Value': 'xx'
         },
         {
             'Key': 'Name',
-            'Value': 'flights-dataapicache-001'
+            'Value': 'xx'
         },
         {
             'Key': 'ApplicationRole',
-            'Value': 'Cache'
+            'Value': 'xx'
         },
         {
             'Key': 'Environment',
-            'Value': 'travel-stage'
+            'Value': 'xx'
         },
         {
             'Key': 'Product',
-            'Value': 'Flights'
+            'Value': 'xx'
         }        
-    ])
+     ]
+    )
     print(response)
 
 
@@ -53,4 +52,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
