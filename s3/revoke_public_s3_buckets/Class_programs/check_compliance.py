@@ -16,6 +16,14 @@ class Check_complaince():
             return s3_client
         except:
             print("Access denied, check permissions")
+    
+    #Get SSM client
+    def get_ssm_client(self):
+        try:
+            ssm_client = boto3.client("ssm")
+            return ssm_client
+        except:
+            print("Access denied, check permissions")
 
     #Get config client
     def get_config_client(self):
@@ -24,6 +32,15 @@ class Check_complaince():
             return config_client
         except:
             print("Access denied, check permissions")
+
+    #Put list of compliance status to SSM Parameter Store [bucket_policy, acl]
+    def put_complaince_status_to_parameterstore(self, ssm_client, s3_bucket_name, bucket_compliance):
+        ssm_client.put_parameter(
+            Name="s3_public_compliance_" + s3_bucket_name,
+            Value=((str(bucket_compliance).replace('[', '')).replace(']', '')).replace(' ', ''),
+            Type='String',
+            Overwrite=True
+        )
     
     #Evaluate if bucket policy makes the bucket public
     def evaluate_bucket_policy_compliance(self, configuration_item, s3_client, bucket_name):
@@ -118,7 +135,6 @@ def lambda_handler(event, context):
         if configuration_item["resourceType"] in APPLICABLE_RESOURCES and configuration_item['configurationItemStatus'] != "ResourceDeleted":
             evaluation_bucket_policy = ob.evaluate_bucket_policy_compliance(configuration_item, s3_client, bucket_name)
             evaluation_acl           = ob.evaluate_acl_compliance(configuration_item, s3_client, bucket_name)
-
             bucket_compliance.append(evaluation_bucket_policy["flag"])
             bucket_compliance_annotation.append(evaluation_bucket_policy["annotation"])
             bucket_compliance.append(evaluation_acl["flag"])
@@ -135,4 +151,6 @@ def lambda_handler(event, context):
 
         config_client = ob.get_config_client()
         ob.put_compliance_status_to_aws_config(bucket_compliance, config_client, invoking_event, event)
-
+        if bucket_compliance[0] == False or bucket_compliance[1] == False:
+            ssm_client = ob.get_ssm_client()
+            ob.put_complaince_status_to_parameterstore(ssm_client, bucket_name, bucket_compliance)
