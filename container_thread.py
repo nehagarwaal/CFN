@@ -3,7 +3,7 @@ import paramiko
 import subprocess
 
 def main():
-    key = paramiko.RSAKey.from_private_key_file("C:/Flights/Python/container_thread/test1.pem")
+    key = paramiko.RSAKey.from_private_key_file("C:/test1.pem")
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     cmd='''sudo su
@@ -12,7 +12,7 @@ def main():
 
     # Connect/ssh to an instance
     try:
-        client.connect(hostname="10.232.34.201", username="nagarwal", pkey=key)
+        client.connect(hostname="1.2.3.4", username="user", pkey=key)
         stdin, stdout, stderr = client.exec_command(cmd)
         print(stdout.read())
         client.close()
