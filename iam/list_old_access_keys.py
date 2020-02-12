@@ -20,6 +20,8 @@ def list_of_old_access_keys(iam_client, iam_resource):
     user_names = []
     access_keys_age = []
     access_keys_status = []
+    access_keys_last_used = []
+    access_keys_last_used_service = []
     for user in iam_resource.users.all():
         Metadata = iam_client.list_access_keys(UserName=user.user_name)
         if Metadata['AccessKeyMetadata'] :
@@ -33,12 +35,24 @@ def list_of_old_access_keys(iam_client, iam_resource):
                     user_names.append(user.user_name)
                     access_keys_age.append(access_key_age.days)
                     access_keys_status.append(Status)
+                    access_key_last_used = (iam_client.get_access_key_last_used(AccessKeyId=key.id)).get("AccessKeyLastUsed").get("LastUsedDate")
+                    access_key_last_used_service = (iam_client.get_access_key_last_used(AccessKeyId=key.id)).get("AccessKeyLastUsed").get("ServiceName")
+                    try:
+                        access_keys_last_used.append(access_key_last_used.strftime("%B %d, %Y"))
+                        access_keys_last_used_service.append(access_key_last_used_service)
+                    except:
+                        access_keys_last_used.append("N/A")
+                        access_keys_last_used_service.append("N/A")
+                        continue
+                    print(key.id)
     df = pd.DataFrame() 
     df['AccessIds'] = access_ids
     df['UserNames'] = user_names
     df['AccessKeysAge'] = access_keys_age
     df['AccessKeysStatus'] = access_keys_status
-    df.to_excel('stage.xlsx', index = False) 
+    df['LastUsedDate'] = access_keys_last_used
+    df['LastUsedInService'] = access_keys_last_used_service
+    df.to_excel('prod-one.xlsx', index = False) 
 
 def main():
     iam_client = get_iam_client()
