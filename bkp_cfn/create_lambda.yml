@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  EnvType:
+    Description: Environment type.
+    Type: String
+  ALBCertificate:
+    Description: Certificate to atatch to ALB Listener.
+    Type: String
+  ALBSubnetGroup:
+    Description: Public/Web
+    Type: String
+  DefaultALBSG:
+    Description: Pre defined SGs to be attached to the ALB
+    Type: List<AWS::EC2::SecurityGroup::Id>
+
+Conditions:
+  CheckALBSubnetGroup: !Equals [!Ref ALBSubnetGroup, web]
+
+Resources:

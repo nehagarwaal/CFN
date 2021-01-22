@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  EnvType:
+    Description: Environment type.
+    Type: String
+  ALBCertificate:
+    Description: Certificate to atatch to ALB Listener.
+    Type: String
+  ALBSubnetGroup:
+    Description: Public/Web
+    Type: String
+  DefaultALBSG:
+    Description: Pre defined SGs to be attached to the ALB
+    Type: List<AWS::EC2::SecurityGroup::Id>
+
+Conditions:
+  CheckALBSubnetGroup: !Equals [!Ref ALBSubnetGroup, web]
+
+Resources:
+ALBSecurityGroup:
+  Type: AWS::EC2::SecurityGroup
+  Properties: 
+    GroupDescription: This SG will be attached to ALB
+    GroupName: Flights-Delta-Logger-ALB
+    SecurityGroupEgress: 
+      - CidrIp: 0.0.0.0/0
+        FromPort: 443
+        IpProtocol: tcp
+        ToPort: 443
+    Tags: 
+      - Key: Product
+        Value: Flights
+    VpcId: !ImportValue VPCID
+
+LoadBalancer:
+  Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  Properties: 
+    IpAddressType: ipv4
+    LoadBalancerAttributes: 
+      -  Key: idle_timeout.timeout_seconds
+         Value: 60
+    Name: Flights-Delta-Logger
+    Scheme: internet-facing
+    SecurityGroups: 
+      - !Ref ALBSecurityGroup
+      - !Ref DefaultALBSG
+    Subnets:  
+      - Fn::If: [CheckALBSubnetGroup, value_if_true, value_if_false]
+    Tags: 
+      - Key: Product
+        Value: Flights
+      - Key: Name
+        Value: Flights-Delta-Logger
+    Type: application
+
+ALBListener:
+  Type: AWS::ElasticLoadBalancingV2::Listener
+  Properties: 
+    Certificates: 
+      - !Ref ALBCertificate
+    DefaultActions: 
+      - TargetGroupArn: !Ref ALBDefaultTargetGroup
+        Type: forward
+    LoadBalancerArn: !Ref LoadBalancer
+    Port: 443
+    Protocol: HTTPS
+    SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
+
+ALBInvokeLambdaPermissions:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue LambdaFunction
+      Principal: elb.amazonaws.com  
+      SourceAccount: 095218890333
+
+ALBDefaultTargetGroup:
+  Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  Properties: 
+    HealthCheckEnabled: True
+    HealthCheckIntervalSeconds: 20
+    HealthCheckPath: /
+    HealthCheckProtocol: HTTP
+    HealthCheckTimeoutSeconds: 10
+    HealthyThresholdCount: 4
+    Matcher: 
+      200
+    Name: DefaultTargetGroup
+    Port: 80
+    Protocol: HTTP
+    UnhealthyThresholdCount: 2
+    VpcId: !ImportValue VPCID

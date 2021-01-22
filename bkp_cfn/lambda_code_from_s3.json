@@ -1,0 +1,72 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "Product": {
+        "Type": "String",
+        "Description": "Product Name like Hotel/Car/Cart/Flight/Revenue/OCL"
+      },
+      "JiraCard": {
+        "Type": "String",
+        "Description": "Version of the zip package"
+      },
+      "S3Bucket": {
+        "Type": "String",
+        "Description": "Name of the bucket where the zip package is stored"
+      },
+      "S3BucketPrefix": {
+        "Type": "String",
+        "Description": "Complete path inside the bucket"
+      },
+      "LambdaFunctionName": {
+        "Type": "String",
+        "Description": "Name of the lambda function"
+      },
+      "LambdaFunctionRole": {
+        "Type": "String",
+        "Description": "ARN of the role to be attached to lambda function"
+      },
+      "LambdaFunctionHandler": {
+        "Type": "String",
+        "Description": "Handler of the lambda function"
+      },
+      "LambdaSG": {
+        "Type": "String",
+        "Description": "Lambda Security Group"
+      }
+  },
+  
+"Resources": {
+  "LAmbdaFunction": {
+    "Type" : "AWS::Lambda::Function",
+    "Properties" : {
+        "Code" : {
+            "S3Bucket" : {"Ref": "S3Bucket"},
+            "S3Key" : {"Fn::Join": ["",[{"Fn::Join": ["",[{"Ref": "S3BucketPrefix"}, "/"]]}, {"Ref": "JiraCard"}, ".zip"]]}
+          },
+        "Environment" : {
+            "Variables" : {"conn_str" : "Server=flights-delta-logger.cluster-ctswttruwdja.us-east-1.rds.amazonaws.com;Database=delta;Uid=flights;Pwd=deltalogger;"}
+          },
+        "FunctionName" : {"Ref": "LambdaFunctionName"},
+        "Handler" : {"Ref": "LambdaFunctionHandler"},
+        "Role" : {"Ref": "LambdaFunctionRole"},
+        "Runtime" : "dotnetcore2.1",
+        "Tags" : [{
+          "Key" : "Product",
+          "Value" : {"Ref": "Product"}
+        } ],
+        "Timeout" : 60,
+        "VpcConfig" : {
+          "SecurityGroupIds" : [ { "Ref": "LambdaSG" } ],
+          "SubnetIds" : [ "subnet-cd51ad91", "subnet-70ec2c17", "subnet-56fd0478", "subnet-8748cbcd" ] 
+        }
+      }
+  }
+  },
+  "Outputs": {
+    "LambdaFucntionName": {
+        "Value": {
+            "Ref": "DeltaLogger"
+        }
+    }
+  }
+}

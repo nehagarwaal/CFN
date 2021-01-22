@@ -1,0 +1,34 @@
+[ 
+  {
+      "ParameterKey": "Product",
+      "ParameterValue": "product"
+    },
+    {
+      "ParameterKey": "JiraCard",
+      "ParameterValue": "jira_card"
+    },
+    {
+      "ParameterKey": "S3Bucket",
+      "ParameterValue": "s3_bucket_name"
+    },
+    {
+      "ParameterKey": "S3BucketPrefix",
+      "ParameterValue": "s3_bucket_prefix"
+    },
+    {
+      "ParameterKey": "LambdaFunctionName",
+      "ParameterValue": "lambda_function_name"
+    },
+    {
+      "ParameterKey": "LambdaFunctionRole",
+      "ParameterValue": "lambda_function_role"
+    },
+	 {
+      "ParameterKey": "LambdaFunctionHandler",
+      "ParameterValue": "lambda_function_handler"
+    },
+    {
+      "ParameterKey": "LambdaSG",
+      "ParameterValue": "lambda_security_group"
+    }
+  ]

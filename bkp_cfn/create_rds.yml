@@ -1,0 +1,38 @@
+Type: AWS::RDS::DBInstance
+Properties: 
+  AllowMajorVersionUpgrade: True
+  AutoMinorVersionUpgrade: True
+  CopyTagsToSnapshot: True
+  DBClusterIdentifier: flights-delta-logger
+  DBName: delta
+  DBSubnetGroupName: flights
+  DeletionProtection: True
+  EnableIAMDatabaseAuthentication: Boolean
+  EnablePerformanceInsights: Boolean
+  Engine: aurora-mysql
+  LicenseModel: String
+  MasterUserPassword: deltalogger
+  MasterUsername: flights
+  MonitoringInterval: Integer
+  MonitoringRoleArn: String
+  MultiAZ: Boolean
+  OptionGroupName: String
+  PerformanceInsightsKMSKeyId: String
+  PerformanceInsightsRetentionPeriod: Integer
+  Port: String
+  PreferredBackupWindow: String
+  PreferredMaintenanceWindow: String
+  ProcessorFeatures: 
+    - ProcessorFeature
+  PromotionTier: Integer
+  PubliclyAccessible: Boolean
+  SourceDBInstanceIdentifier: String
+  SourceRegion: String
+  StorageEncrypted: Boolean
+  StorageType: String
+  Tags: 
+    - Tag
+  Timezone: String
+  UseDefaultProcessorFeatures: Boolean
+  VPCSecurityGroups: 
+    - String

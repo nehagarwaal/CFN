@@ -1,0 +1,352 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+      "VpcId": {
+        "Type": "AWS::EC2::VPC::Id",
+        "Description": "Select a VPC that allows instances to access the Internet."
+      },
+	   "WebSubnets": {
+        "Type": "List<AWS::EC2::Subnet::Id>",
+        "Description": "Select atleast two web subnets in your selected VPC."
+      },
+      "PublicSubnets": {
+        "Type": "List<AWS::EC2::Subnet::Id>",
+        "Description": "Select atleast two public subnets in your selected VPC."
+      },
+      "Environment": {
+        "Type": "String",
+        "Description": "Environment Name : travel-qa/travel-stage/travel-prod/pci-qa/pci-stage/pci-prod",
+        "AllowedValues": [
+          "travel-qa",
+		      "pci-qa",
+          "travel-stage",
+		      "pci-stage",
+          "travel-prod",
+          "pci-prod",
+          "toolchain"
+        ]
+      },
+      "Region": {
+        "Description": "Region to deploy this infrastructure",
+        "Type": "String",
+        "Default": "us-east-1",
+        "AllowedValues": [
+          "us-east-1"
+        ],
+        "ConstraintDescription": "Please choose a Region to deploy this infrastructure"
+      },
+	  "ALBSubnets":{
+	   "Type": "String",
+        "Description": "ALB is Public or Private",
+        "AllowedValues": [ "public", "web" ]
+      },
+	  "CommonALBSecurityGroups": {
+        "Type": "CommaDelimitedList",
+        "Description": "Common ALB Security Groups"
+      },
+      "CertificateARN": {
+        "Type": "String",
+        "Description": "CertificateARN of the desired environment"
+      },
+      "Product": {
+        "Type": "String",
+        "Description": "Product Name like Hotel/Car/Cart/Flight/Revenue/OCL"
+      },
+      "ApplicationName": {
+        "Type": "String",
+        "Description": "Application Name like Engine/USG"
+      }, 
+	  "ProductOwnerEmail": {
+        "Type": "String",
+        "Description": "Email ID of the product owner like xyz@tavisca.com"
+      },
+	    "ApplicationOwnerEmail": {
+        "Type": "String",
+        "Description": "Email ID of the application owner like xyz@tavisca.com"
+      },	  
+	  "Purpose":{
+	    "Type": "String",
+        "Description": "Purpose for creating this instance like POC/Business"
+      
+    }
+    },    
+    "Conditions": {
+      "ALBCommonSGs": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              "",
+              {
+                "Fn::Join": [
+                  "",
+                  {
+                    "Ref": "CommonALBSecurityGroups"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+		},
+      "ALBScheme":{"Fn::Equals" : [{"Ref":"ALBSubnets"}, "web"]}
+    },
+	"Resources": {
+      "ALBSecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+          "GroupName": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Ref": "Product"
+                },
+                {
+                  "Ref": "ApplicationName"
+                },
+                "ALB-SG"
+              ]
+            ]
+          },
+          "GroupDescription": "Allow http to client host",
+          "VpcId": {
+            "Ref": "VpcId"
+          },
+   
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    {
+                      "Ref": "Product"
+                    },
+                    {
+                      "Ref": "ApplicationName"
+                    },
+                    "ALB-SG"
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "ECSCluster": {
+        "Type": "AWS::ECS::Cluster",
+        "Properties": {
+          "ClusterName": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Ref": "Product"
+                },
+                {
+                  "Ref": "ApplicationName"
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "ECSTargetGroup": {
+        "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+        "Properties": {
+          "HealthCheckIntervalSeconds": 20,
+          "HealthCheckPath": "/",
+          "HealthCheckProtocol": "HTTP",
+          "HealthCheckTimeoutSeconds": 5,
+          "HealthyThresholdCount": 2,
+          "Name": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Ref": "Product"
+                },
+                {
+                  "Ref": "ApplicationName"
+                },
+                "TG"
+              ]
+            ]
+          },
+          "Port": 80,
+          "Protocol": "HTTP",
+          "UnhealthyThresholdCount": 10,
+          "VpcId": {
+            "Ref": "VpcId"
+          }
+        }
+      },
+      "ALB": {
+        "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+        "Properties": {
+          "Name": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Ref": "Product"
+                },
+                {
+                  "Ref": "ApplicationName"
+                },
+                "ALB"
+              ]
+            ]
+          },
+          "Scheme": 
+		  {
+                                      
+		  "Fn::If":["ALBScheme","internal","internet-facing"]
+		  },
+          "LoadBalancerAttributes": [
+            {
+              "Key": "idle_timeout.timeout_seconds",
+              "Value": "60"
+            }
+          ],
+          "Subnets": 
+		  {
+			"Fn::If": ["ALBScheme", {"Ref":"WebSubnets"}, {"Ref":"PublicSubnets"}]
+		  },
+         "SecurityGroups": {
+            "Fn::If": [
+              "ALBCommonSGs",
+              {
+                "Fn::Split": [
+                  ",",
+                  {
+                    "Fn::Join": [
+                      ",",
+                      [
+                        {
+                          "Ref": "ALBSecurityGroup"
+                        },
+                        {
+                          "Fn::Join": [
+                            ",",
+                            {
+                              "Ref": "CommonALBSecurityGroups"
+                            }
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                ]
+              },     
+			  {
+                "Fn::Split": [
+                  ",",
+                  {
+                    "Ref": "ALBSecurityGroup"
+                  }
+                ]
+              }
+            ]
+          }
+       }
+	   },
+	   
+      "ALBListener": {
+        "Type": "AWS::ElasticLoadBalancingV2::Listener",
+        "DependsOn": "ALB",
+        "Properties": {
+          "Certificates": [
+            {
+              "CertificateArn": {
+                "Ref": "CertificateARN"
+              }
+            }
+          ],
+          "DefaultActions": [
+            {
+              "Type": "forward",
+              "TargetGroupArn": {
+                "Ref": "ECSTargetGroup"
+              }
+            }
+          ],
+          "LoadBalancerArn": {
+            "Ref": "ALB"
+          },
+          "Port": "443",
+          "Protocol": "HTTPS",
+          "SslPolicy": "ELBSecurityPolicy-TLS-1-2-2017-01"
+        }
+      },
+      "LogGroup": {
+        "Type": "AWS::Logs::LogGroup",
+        "Properties": {
+          "LogGroupName": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Ref": "Product"
+                },
+                {
+                  "Ref": "ApplicationName"
+                }
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "Outputs": {
+      "ecscluster": {
+        "Value": {
+          "Ref": "ECSCluster"
+        },
+        "Export": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-ECSCluster"
+          }
+        }
+      },
+      "ALB": {
+        "Description": "Your ALB DNS URL",
+        "Value": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Fn::GetAtt": [
+                  "ALB",
+                  "DNSName"
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "TargetGroupListenerARN": {
+        "Description": "ARN of TargetGroup",
+        "Value": {
+          "Ref": "ALBListener"
+        },
+        "Export": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-TargetGroupListenerARN"
+          }
+        }
+      },
+      "LogGroup": {
+        "Description": "Log Group for the service",
+        "Value": {
+          "Ref": "LogGroup"
+        },
+        "Export": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-LogGroup"
+          }
+        }
+      }
+    }
+  }

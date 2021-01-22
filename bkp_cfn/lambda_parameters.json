@@ -1,0 +1,62 @@
+[ 
+  {
+      "ParameterKey": "Product",
+      "ParameterValue": "product"
+    },
+    {
+      "ParameterKey": "JiraCard",
+      "ParameterValue": "jira_card"
+    },
+    {
+      "ParameterKey": "S3Bucket",
+      "ParameterValue": "s3_bucket_name"
+    },
+    {
+      "ParameterKey": "S3BucketPrefix",
+      "ParameterValue": "s3_bucket_prefix"
+    },
+    {
+      "ParameterKey": "LambdaFunctionName",
+      "ParameterValue": "lambda_function_name"
+    },
+    {
+      "ParameterKey": "LambdaFunctionRole",
+      "ParameterValue": "lambda_function_role"
+    },
+	 {
+      "ParameterKey": "LambdaFunctionHandler",
+      "ParameterValue": "lambda_function_handler"
+    },
+    {
+      "ParameterKey": "DefaultLambdaSG",
+      "ParameterValue": "default_lambda_security_group"
+    },
+    {
+        "ParameterKey": "VPCID",
+        "ParameterValue": "vpc_id"
+    },
+    {
+        "ParameterKey": "LambdaSubnetGroup",
+        "ParameterValue": "lambda_subnet_group"
+    },
+    {
+        "ParameterKey": "CreateALB",
+        "ParameterValue": "create_alb"
+    },
+    {
+        "ParameterKey": "ALBCertificate",
+        "ParameterValue": "alb_certificate"
+    },
+    {
+        "ParameterKey": "ALBSubnetGroup",
+        "ParameterValue": "alb_subnet_group"
+    },
+    {
+        "ParameterKey": "DefaultALBSG",
+        "ParameterValue": "default_alb_security_group"
+    },
+    {
+        "ParameterKey": "CreateALBCFNLink",
+        "ParameterValue": "s3_link_create_alb"
+    }
+  ]
