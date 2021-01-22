@@ -1,0 +1,808 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "KeyName": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the ECS instances."
+    },
+    "IAMInstanceProfileRole":{
+      "Type": "String",
+      "Default": "spinnakerRole",
+      "Description": "IAM Instance Profile Role to be attached on INSTANCE"
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "Select a VPC that allows instances to access the Internet."
+    },
+    "ApplicationSubnets": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Select at least two application subnets in your selected VPC."
+    },
+   "WebSubnets": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Select atleast two web subnets in your selected VPC."
+    },
+    "PublicSubnets": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Select atleast two public subnets in your selected VPC."
+    },
+    "Environment": {
+      "Type": "String",
+      "Description": "Environment Name : travel-qa/travel-stage/travel-prod/pci-qa/pci-stage/pci-prod",
+      "AllowedValues": [
+        "travel-qa",
+        "pci-qa",
+        "travel-stage",
+        "pci-stage",
+        "travel-prod",
+        "pci-prod",
+        "toolchain"
+      ]
+    },
+    "DesiredCapacity": {
+      "Type": "Number",
+      "Default": "1",
+      "Description": "Number of instances to launch in your ECS cluster."
+    },
+    "MaxCapacity": {
+      "Type": "Number",
+      "Default": "1",
+      "Description": "Maximum number of instances that can be launched in your ECS cluster."
+    },
+    "MinCapacity": {
+      "Type": "Number",
+      "Default": "1",
+      "Description": "Maximum number of instances that can be launched in your ECS cluster."
+    },
+    "Region": {
+      "Description": "Region to deploy this infrastructure",
+      "Type": "String",
+      "Default": "us-east-1",
+      "AllowedValues": [
+        "us-east-1"
+      ],
+      "ConstraintDescription": "Please choose a Region to deploy this infrastructure"
+    },
+  "ALBSubnets":{
+   "Type": "String",
+      "Description": "ALB is Public or Private",
+      "AllowedValues": [ "public", "web" ]
+  },
+   "EC2Subnets":{
+   "Type": "String",
+      "Description": "EC2 Instance is Web or Application",
+      "AllowedValues": [ "web", "app" ]
+  },
+    "InstanceType": {
+      "Description": "EC2 instance type",
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues": [
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t3.micro",
+        "t3.small",
+        "t3.medium",
+        "t3.large",
+        "m3.medium",
+        "c5.large",
+        "c5.xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c5n.large",
+        "c5n.xlarge"
+      ],
+      "ConstraintDescription": "Please choose a valid instance type."
+    },
+    "CommonEC2SecurityGroups": {
+      "Type": "CommaDelimitedList",
+      "Description": "Common EC2 Security Groups"
+    },     
+  "CommonALBSecurityGroups": {
+      "Type": "CommaDelimitedList",
+      "Description": "Common ALB Security Groups"
+    },
+    "AMIID": {
+      "Type": "String",
+      "Description": "AMI_ID in the desired environment"
+    },
+    "AlertLogicApplianceHostIp": {
+      "Type": "String",
+      "Description": "Alert Logic Threat Manager Appliance IP"
+    },
+    "CertificateARN": {
+      "Type": "String",
+      "Description": "CertificateARN of the desired  environment"
+    },
+    "Product": {
+      "Type": "String",
+      "Description": "Product Name like Hotel/Car/Cart/Flight/Revenue/OCL"
+    },
+    "ApplicationName": {
+      "Type": "String",
+      "Description": "Application Name like Engine/USG"
+    }, 
+  "ProductOwnerEmail": {
+      "Type": "String",
+      "Description": "Email ID of the product owner like xyz@tavisca.com"
+    },
+    "ApplicationOwnerEmail": {
+      "Type": "String",
+      "Description": "Email ID of the application owner like xyz@tavisca.com"
+    },
+  
+  "Purpose":{
+    "Type": "String",
+      "Description": "Purpose for creating this instance like POC/Business"
+    
+  },
+  "SNSTopicARN":{
+    "Type": "String",
+    "Description": "SNS topic for  ASG lifecycle hook"
+  },
+  "IAMRoleARN": {
+    "Type": "String",
+    "Description": "IAM Role for ASG lifecycle hook"
+  },
+"ScaleupAlarmPeriod":{
+  "Type": "Number",
+    "Description":"Scaleup period for service"
+  },
+ "ScaleupAlarmEvaluationPeriods":{
+ "Type": "Number",
+    "Description":"Scaleup EvaluationPeriods"
+  },
+    "ScaleupAlarmThreshold":{
+  "Type": "Number",
+    "Description":"Scaleup Threshold of alarm"
+  },
+  "ScaledownAlarmPeriod":{
+  "Type": "Number",
+  "Description":"Scaledown period"
+  },
+ "ScaledownAlarmEvaluationPeriods":{
+ "Type": "Number",
+ "Description":"Scaledown EvaluationPeriods"
+  },
+    "ScaledownAlarmThreshold":{
+  "Type": "Number",
+"Description":"Scaledown Threshold of alarm"
+  },
+  "MetricName":{
+    "Description": "Metric Name to apply autoscaling policies on",
+    "Type": "String",
+    "Default": "Scale_Up_Capacity"
+  },
+  "OnDemandBaseNumber":{
+    "Description": "On demand base instances",
+    "Type": "Number"
+  },
+  "OnDemandPercentageAboveBase":{
+    "Description": "Percentage of On demand instances above base capacity",
+    "Type": "Number"
+  }
+  },
+  
+  "Conditions": {
+    "EC2CommonSGs": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            "",
+            {
+              "Fn::Join": [
+                "",
+                {
+                  "Ref": "CommonEC2SecurityGroups"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+  },
+    "ALBCommonSGs": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            "",
+            {
+              "Fn::Join": [
+                "",
+                {
+                  "Ref": "CommonALBSecurityGroups"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+  },
+    "ALBScheme":{"Fn::Equals" : [{"Ref":"ALBSubnets"}, "web"]},
+  "EC2SubnetSelector":{"Fn::Equals" : [{"Ref":"EC2Subnets"}, "web"]},
+    "SelectedMetricName" : {"Fn::Equals" : [{"Ref" : "MetricName"}, "Scale_Up_Capacity"]}
+  },
+"Resources": {
+    "ALBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Product"
+              },
+              {
+                "Ref": "ApplicationName"
+              },
+              "ALB-SG"
+            ]
+          ]
+        },
+        "GroupDescription": "Allow http to client host",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+ 
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "Product"
+                  },
+                  {
+                    "Ref": "ApplicationName"
+                  },
+                  "ALB-SG"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "InstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Product"
+              },
+              {
+                "Ref": "ApplicationName"
+              },
+              "EC2-SG"
+            ]
+          ]
+        },
+        "GroupDescription": "Allow http to client host",
+     "SecurityGroupEgress": [
+    {
+      "CidrIp": "127.0.0.1/32",
+      "IpProtocol": "-1"
+    }
+  ],
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "Product"
+                  },
+                  {
+                    "Ref": "ApplicationName"
+                  },
+                  "EC2-SG"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "OutboundRule": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "IpProtocol": "tcp",
+        "FromPort": "32768",
+        "ToPort": "65535",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "InstanceSecurityGroup",
+            "GroupId"
+          ]
+        },
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ALBSecurityGroup",
+            "GroupId"
+          ]
+        }
+      }
+    },
+    "InboundRule": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "IpProtocol": "tcp",
+        "FromPort": "32768",
+        "ToPort": "65535",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ALBSecurityGroup",
+            "GroupId"
+          ]
+        },
+        "GroupId": {
+          "Fn::GetAtt": [
+            "InstanceSecurityGroup",
+            "GroupId"
+          ]
+        }
+      }
+    },
+    "ECSCluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Product"
+              },
+              {
+                "Ref": "ApplicationName"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "ECSTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": 20,
+        "HealthCheckPath": "/",
+        "HealthCheckProtocol": "HTTP",
+        "HealthCheckTimeoutSeconds": 5,
+        "HealthyThresholdCount": 2,
+        "Name": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Product"
+              },
+              {
+                "Ref": "ApplicationName"
+              },
+              "TG"
+            ]
+          ]
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "UnhealthyThresholdCount": 10,
+        "VpcId": {
+          "Ref": "VpcId"
+        }
+      }
+    },
+    "ALB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Product"
+              },
+              {
+                "Ref": "ApplicationName"
+              },
+              "ALB"
+            ]
+          ]
+        },
+        "Scheme": 
+    {
+                                    
+    "Fn::If":["ALBScheme","internal","internet-facing"]
+    },
+        "LoadBalancerAttributes": [
+          {
+            "Key": "idle_timeout.timeout_seconds",
+            "Value": "60"
+          }
+        ],
+        "Subnets": 
+    {
+    "Fn::If": ["ALBScheme", {"Ref":"WebSubnets"}, {"Ref":"PublicSubnets"}]
+    },
+       "SecurityGroups": {
+          "Fn::If": [
+            "ALBCommonSGs",
+            {
+              "Fn::Split": [
+                ",",
+                {
+                  "Fn::Join": [
+                    ",",
+                    [
+                      {
+                        "Ref": "ALBSecurityGroup"
+                      },
+                      {
+                        "Fn::Join": [
+                          ",",
+                          {
+                            "Ref": "CommonALBSecurityGroups"
+                          }
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ]
+            },     
+      {
+              "Fn::Split": [
+                ",",
+                {
+                  "Ref": "ALBSecurityGroup"
+                }
+              ]
+            }
+          ]
+        },
+        "Tags":[
+          { "Key" : "ApplicationOwner", "Value" : {"Ref": "ApplicationOwnerEmail"} },
+          { "Key" : "ProductOwner", "Value" : {"Ref": "ProductOwnerEmail"} },
+          { "Key" : "Purpose", "Value" : {"Ref": "Purpose"} },
+          { "Key" : "Name", "Value" : {"Fn::Join": ["-",[{"Ref": "Product"},{"Ref": "ApplicationName"},"ALB"]]} },
+          { "Key" : "ApplicationRole", "Value" : "Application Load Balancer" },
+          { "Key" : "Environment", "Value" : {"Ref": "Environment"} },
+          { "Key" : "Product", "Value" : {"Ref": "Product"} }
+        ]
+     }
+   },
+   
+    "ALBListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "DependsOn": "ALB",
+      "Properties": {
+        "Certificates": [
+          {
+            "CertificateArn": {
+              "Ref": "CertificateARN"
+            }
+          }
+        ],
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "ECSTargetGroup"
+            }
+          }
+        ],
+        "LoadBalancerArn": {
+          "Ref": "ALB"
+        },
+        "Port": "443",
+        "Protocol": "HTTPS",
+        "SslPolicy": "ELBSecurityPolicy-TLS-1-2-2017-01"
+      }
+    },
+    "ASG" : {
+        "Type" : "AWS::AutoScaling::AutoScalingGroup",
+        "Properties" : {
+            "Cooldown" : "60",
+            "DesiredCapacity" : {"Ref": "DesiredCapacity"},
+            "LifecycleHookSpecificationList" : [
+                {
+                "HeartbeatTimeout" : 900,
+                "LifecycleHookName" : {"Fn::Join": ["-",[{"Ref": "Product"},{"Ref": "ApplicationName"},"Lifecycle-hook"]]},
+                "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+                "NotificationTargetARN": {"Ref": "SNSTopicARN"},
+                "NotificationMetadata": {"Ref": "ECSCluster"},
+                "RoleARN": {"Ref": "IAMRoleARN"}
+                }
+            ],
+            "MaxSize" : {"Ref": "MaxCapacity"},
+            "MetricsCollection" : [ {"Granularity" : "1Minute"} ],
+            "MinSize" : {"Ref": "MinCapacity"},
+            "MixedInstancesPolicy" : {
+                "InstancesDistribution" : {
+                    "OnDemandAllocationStrategy" : "prioritized",
+                    "OnDemandBaseCapacity" : {"Ref": "OnDemandBaseNumber"},
+                    "OnDemandPercentageAboveBaseCapacity" : {"Ref": "OnDemandPercentageAboveBase"},
+                    "SpotAllocationStrategy" : "capacity-optimized"
+                },
+                "LaunchTemplate" : {
+                "LaunchTemplateSpecification" : {
+                "LaunchTemplateId" : {"Ref": "ECSClusterLaunchTemplate"},
+                "Version" : { "Fn::GetAtt" : [ "ECSClusterLaunchTemplate", "LatestVersionNumber" ] }
+                },
+                "Overrides" : [{"InstanceType" : {"Ref": "InstanceType"}}]
+                }
+            },
+            "Tags" : [
+                { "Key" : "ECS_Cluster", "Value" : {"Fn::Join": ["-",[{"Ref": "Product"},{"Ref": "ApplicationName"}]]}, "PropagateAtLaunch": "true" },
+                { "Key": "Name", "Value": { "Fn::Join": ["-",[{"Ref": "Product"},{"Ref": "ApplicationName"},"ECS-EC2"]]}, "PropagateAtLaunch": "true"},
+                { "Key": "Environment", "Value": {"Ref": "Environment"},"PropagateAtLaunch": "true"},
+                { "Key": "Platform", "Value": "Linux","PropagateAtLaunch": "true"},
+                { "Key": "Product", "Value": {"Ref": "Product"}, "PropagateAtLaunch": "true"},
+                { "Key": "Application", "Value": {"Ref": "ApplicationName"},"PropagateAtLaunch": "true"}, 
+                { "Key": "ApplicationRole", "Value": {"Fn::Join": ["-",[{"Ref": "EC2Subnets"},"Server"]]},"PropagateAtLaunch": "true"},
+                { "Key": "ProductOwner", "Value": {"Ref": "ProductOwnerEmail"},"PropagateAtLaunch": "true"},
+                { "Key": "ApplicationOwner", "Value": {"Ref": "ApplicationOwnerEmail"},"PropagateAtLaunch": "true"},        
+                { "Key": "Purpose", "Value": {"Ref": "Purpose"}, "PropagateAtLaunch": "true"}
+                ],
+            "TerminationPolicies" : ["OldestInstance"],
+            "VPCZoneIdentifier" : {"Fn::If":["EC2SubnetSelector", {"Ref":"WebSubnets"}, {"Ref":"ApplicationSubnets"}]}
+        },
+        "CreationPolicy": {
+            "ResourceSignal": {"Timeout": "PT15M"}
+        },
+        "UpdatePolicy" : {
+          "AutoScalingReplacingUpdate": {"WillReplace": "false"},
+          "AutoScalingRollingUpdate": {
+            "MaxBatchSize": "2",
+            "MinInstancesInService": "1",
+            "PauseTime": "PT10M",
+            "SuspendProcesses": ["AlarmNotification"],
+            "WaitOnResourceSignals": true
+          }
+        }
+        
+    },
+    "ScaleUpPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "PolicyType": "SimpleScaling",
+        "Cooldown": "120",
+        "AutoScalingGroupName": {
+          "Ref": "ASG"
+        },
+        "ScalingAdjustment": 1
+      }
+    },
+    "ScaleDownPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "PolicyType": "SimpleScaling",
+        "Cooldown": "900",
+        "AutoScalingGroupName": {
+          "Ref": "ASG"
+        },
+        "ScalingAdjustment": -1
+      }
+    },
+    "EcsAsgHighAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName" : {"Fn::Join": ["_",[{"Ref": "Product"},{"Ref": "ApplicationName"},{"Ref": "MetricName"},"Scale_Up"]]},
+        "AlarmDescription": "Scale Up alarm for ASG on the basis of maximum container size",
+        "AlarmActions": [
+          {
+            "Ref": "ScaleUpPolicy"
+          }
+        ],
+        "MetricName": {"Ref": "MetricName"},
+        "Namespace" : {"Fn::If": ["SelectedMetricName", "Scale_Up_Capacity_Cluster", "AWS/ECS"]},
+        "Statistic": "Average",
+        "Period": {"Ref": "ScaleupAlarmPeriod"},
+        "EvaluationPeriods": {"Ref": "ScaleupAlarmEvaluationPeriods"},
+        "Threshold": {"Ref": "ScaleupAlarmThreshold"},
+        "ComparisonOperator": {"Fn::If": ["SelectedMetricName", "LessThanThreshold", "GreaterThanOrEqualToThreshold"]},
+        "TreatMissingData" : "breaching",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": {
+              "Ref": "ECSCluster"
+            }
+          }
+        ]
+      }
+    },
+    "EcsAsgLowAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName" : {"Fn::Join": ["_",[{"Ref": "Product"},{"Ref": "ApplicationName"},{"Ref": "MetricName"},"Scale_Down"]]},
+        "Namespace" : {"Fn::If": ["SelectedMetricName", "Scale_Up_Capacity_Cluster", "AWS/ECS"]},
+        "AlarmDescription": "Scale Down alarm for ASG on the basis of maximum container size",
+        "AlarmActions": [
+          {
+            "Ref": "ScaleDownPolicy"
+          }
+        ],
+        "MetricName": {"Ref": "MetricName"},
+        "Statistic": "Average",
+        "Period": {"Ref": "ScaledownAlarmPeriod"},
+        "EvaluationPeriods": {"Ref": "ScaledownAlarmEvaluationPeriods"},
+        "Threshold": {"Ref": "ScaledownAlarmThreshold"},
+        "ComparisonOperator": {"Fn::If": ["SelectedMetricName", "GreaterThanThreshold", "LessThanThreshold"]},
+        "TreatMissingData" : "breaching",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": {
+              "Ref": "ECSCluster"
+            }
+          }
+        ]
+      }
+    },
+    "ECSClusterLaunchTemplate" :{
+        "Type" : "AWS::EC2::LaunchTemplate",
+        "Properties" : {
+            "LaunchTemplateData" : {
+            "IamInstanceProfile" : {"Name" : {"Ref":"IAMInstanceProfileRole"}},
+            "ImageId" : {"Ref": "AMIID"},
+            "KeyName" : {"Ref": "KeyName"},
+            "Monitoring" : {"Enabled" : true},
+            "SecurityGroupIds" : {
+                "Fn::If": [
+                    "EC2CommonSGs",
+                    {
+                    "Fn::Split": [
+                        ",",
+                        {
+                        "Fn::Join": [
+                            ",",
+                            [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            },
+                            {
+                                "Fn::Join": [
+                                ",",
+                                {
+                                    "Ref": "CommonEC2SecurityGroups"
+                                }
+                                ]
+                            }
+                            ]
+                        ]
+                        }
+                    ]
+                    },
+                    {
+                    "Fn::Split": [
+                        ",",
+                        {
+                        "Ref": "InstanceSecurityGroup"
+                        }
+                    ]
+                    }
+                ]
+            },
+            "UserData" : {
+                "Fn::Base64": {
+                    "Fn::Join": [
+                    "",
+                    [
+                        "#!/bin/bash -xe\n",
+                        "echo ECS_CLUSTER=",
+                        {
+                        "Ref": "ECSCluster"
+                        },
+                        " >> /etc/ecs/ecs.config\n",
+                        "ECS_ENABLE_SPOT_INSTANCE_DRAINING=true\n",
+                        "aws s3 cp s3://cnx-nextgen-devops/scripts/Ec2Init.sh ./Ec2Init.sh\n",
+                        "chmod 755 ./Ec2Init.sh\n",
+                        "./Ec2Init.sh ",
+                        {
+                        "Ref": "AlertLogicApplianceHostIp"
+                        },
+                        "\n",
+                        "/opt/import_users.sh SSH\n",
+                        "echo '*/5 * * * * root /opt/import_users.sh SSH' >> /etc/cron.d/import_users\n",
+                        "echo '0 12 * * * root /opt/delete_users.sh SSH' >> /etc/cron.d/delete_users\n",
+                        "/opt/aws/bin/cfn-signal -e $? ",
+                        "--stack ",
+                        {
+                        "Ref": "AWS::StackName"
+                        },
+                        " --resource ASG ",
+                        "--region ",
+                        {
+                        "Ref": "AWS::Region"
+                        }
+                    ]
+                    ]
+                }
+            }
+        }
+      }
+    },
+    "LogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Product"
+              },
+              {
+                "Ref": "ApplicationName"
+              }
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "ecscluster": {
+      "Value": {
+        "Ref": "ECSCluster"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-ECSCluster"
+        }
+      }
+    },
+    "ALB": {
+      "Description": "Your ALB DNS URL",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            {
+              "Fn::GetAtt": [
+                "ALB",
+                "DNSName"
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    "TargetGroupListenerARN": {
+      "Description": "ARN of TargetGroup",
+      "Value": {
+        "Ref": "ALBListener"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-TargetGroupListenerARN"
+        }
+      }
+    },
+    "LogGroup": {
+      "Description": "Log Group for the service",
+      "Value": {
+        "Ref": "LogGroup"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-LogGroup"
+        }
+      }
+    }
+  }
+}

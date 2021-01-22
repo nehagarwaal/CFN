@@ -1,0 +1,143 @@
+[ 
+  {
+      "ParameterKey": "IAMInstanceProfileRole",
+      "ParameterValue": "iam_instance_role"
+    },
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "environment"
+    },
+    {
+      "ParameterKey": "KeyName",
+      "ParameterValue": "key_name"
+    },
+    {
+      "ParameterKey": "VpcId",
+      "ParameterValue": "vpc_id"
+    },
+    {
+      "ParameterKey": "ApplicationSubnets",
+      "ParameterValue": "application_subnets"
+    },
+    {
+      "ParameterKey": "PublicSubnets",
+      "ParameterValue": "public_subnets"
+    },
+	 {
+      "ParameterKey": "WebSubnets",
+      "ParameterValue": "web_subnets"
+    },
+    {
+      "ParameterKey": "ALBSubnets",
+      "ParameterValue": "Alb_Subnet"
+    },
+	  {
+      "ParameterKey": "EC2Subnets",
+      "ParameterValue": "EC2_Subnet"
+    },
+    {
+      "ParameterKey": "DesiredCapacity",
+      "ParameterValue": "desired_capacity"
+    },
+    {
+      "ParameterKey": "MaxCapacity",
+      "ParameterValue": "max_capacity"
+    },
+    {
+      "ParameterKey": "MinCapacity",
+      "ParameterValue": "min_capacity"
+    },
+	{
+      "ParameterKey": "CommonEC2SecurityGroups",
+      "ParameterValue": "Ec2_common-security_groups"
+    },  
+	{
+      "ParameterKey": "CommonALBSecurityGroups",
+      "ParameterValue": "Alb_common-security_groups"
+    },
+    {
+      "ParameterKey": "InstanceType",
+      "ParameterValue": "instance_type"
+    },
+    {
+      "ParameterKey": "Region",
+      "ParameterValue": "region"
+    },
+	
+    {
+      "ParameterKey": "AMIID",
+      "ParameterValue": "ami_id"
+    },
+    {
+      "ParameterKey": "AlertLogicApplianceHostIp",
+      "ParameterValue": "al_appliance_host_ip"
+    },
+    {
+      "ParameterKey": "CertificateARN",
+      "ParameterValue": "certificate_arn"
+    },
+    {
+      "ParameterKey": "Product",
+      "ParameterValue": "product"
+    },
+    {
+      "ParameterKey": "ApplicationName",
+      "ParameterValue": "app_name"
+    },
+	{
+      "ParameterKey": "ProductOwnerEmail",
+      "ParameterValue": "Products_owner_email"
+    },
+	{
+      "ParameterKey": "ApplicationOwnerEmail",
+      "ParameterValue": "application_owner_email"
+    },
+	{
+      "ParameterKey": "Purpose",
+      "ParameterValue": "purpose"
+    },
+    {
+      "ParameterKey": "SNSTopicARN",
+      "ParameterValue": "sns_topic_arn"
+    },
+    {
+      "ParameterKey": "IAMRoleARN",
+      "ParameterValue": "iam_role_arn"
+    },
+	{
+      "ParameterKey": "ScaleupAlarmPeriod",
+      "ParameterValue": "scaleup_alarm_period"
+    },
+	{
+      "ParameterKey": "ScaleupAlarmEvaluationPeriods",
+      "ParameterValue": "scaleup_alarm_evaluation_periods"
+    },
+	{
+      "ParameterKey": "ScaleupAlarmThreshold",
+      "ParameterValue": "scaleup_alarm_threshold"
+    },
+	{
+      "ParameterKey": "ScaledownAlarmPeriod",
+      "ParameterValue": "scaledown_alarm_period"
+    },
+	{
+      "ParameterKey": "ScaledownAlarmEvaluationPeriods",
+      "ParameterValue": "scaledown_alarm_evaluation_periods"
+    },
+	{
+      "ParameterKey": "ScaledownAlarmThreshold",
+      "ParameterValue": "scaledown_alarm_threshold"
+    },
+    {
+      "ParameterKey": "MetricName",
+      "ParameterValue": "metric_name"
+    },
+    {
+        "ParameterKey": "OnDemandBaseNumber",
+        "ParameterValue": "on_demand_base_number"
+    },
+    {
+        "ParameterKey": "OnDemandPercentageAboveBase",
+        "ParameterValue": "on_demand_percentage_above_base"
+    }
+  ]

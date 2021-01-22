@@ -1,0 +1,85 @@
+"ECSCluster_LaunchTemplate" :
+    {
+  "Type" : "AWS::EC2::LaunchTemplate",
+  "Properties" : {
+      "LaunchTemplateData" : {
+            "IamInstanceProfile" : {"Ref":"IAMInstanceProfileRole"},
+            "ImageId" : {"Ref": "AMIID"},
+            "KeyName" : {"Ref": "KeyName"},
+            "Monitoring" : {"Enabled" : true},
+            "SecurityGroups" : {
+                "Fn::If": [
+                    "EC2CommonSGs",
+                    {
+                    "Fn::Split": [
+                        ",",
+                        {
+                        "Fn::Join": [
+                            ",",
+                            [
+                            {
+                                "Ref": "InstanceSecurityGroup"
+                            },
+                            {
+                                "Fn::Join": [
+                                ",",
+                                {
+                                    "Ref": "CommonEC2SecurityGroups"
+                                }
+                                ]
+                            }
+                            ]
+                        ]
+                        }
+                    ]
+                    },
+                    {
+                    "Fn::Split": [
+                        ",",
+                        {
+                        "Ref": "InstanceSecurityGroup"
+                        }
+                    ]
+                    }
+                ]
+            },
+            "UserData" : {
+                "Fn::Base64": {
+                    "Fn::Join": [
+                    "",
+                    [
+                        "#!/bin/bash -xe\n",
+                        "echo ECS_CLUSTER=",
+                        {
+                        "Ref": "ECSCluster"
+                        },
+                        " >> /etc/ecs/ecs.config\n",
+                        "ECS_ENABLE_SPOT_INSTANCE_DRAINING=true\n",
+                        "aws s3 cp s3://cnx-nextgen-devops/scripts/Ec2Init.sh ./Ec2Init.sh\n",
+                        "chmod 755 ./Ec2Init.sh\n",
+                        "./Ec2Init.sh ",
+                        {
+                        "Ref": "AlertLogicApplianceHostIp"
+                        },
+                        "\n",
+                        "/opt/import_users.sh SSH\n",
+                        "echo '*/5 * * * * root /opt/import_users.sh SSH' >> /etc/cron.d/import_users\n",
+                        "echo '0 12 * * * root /opt/delete_users.sh SSH' >> /etc/cron.d/delete_users\n",
+                        "/opt/aws/bin/cfn-signal -e $? ",
+                        "--stack ",
+                        {
+                        "Ref": "AWS::StackName"
+                        },
+                        " --resource ASG ",
+                        "--region ",
+                        {
+                        "Ref": "AWS::Region"
+                        }
+                    ]
+                    ]
+                }
+            }
+        },
+      "LaunchTemplateName" : {"Ref": "ECSCluster"},
+    }
+}

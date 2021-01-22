@@ -1,0 +1,57 @@
+"AutoscalingGroup" :
+{
+  "Type" : "AWS::AutoScaling::AutoScalingGroup",
+  "Properties" : {
+      "DesiredCapacity" : {"Ref": "DesiredCapacity"},
+      "LaunchTemplate" : {"Ref": "ECSCluster_LaunchTemplate"},
+      "LifecycleHookSpecificationList" : [
+        {
+          "HeartbeatTimeout" : 900,
+          "LifecycleHookName" : {"Fn::Join": ["-",[{"Ref": "Product"},{"Ref": "ApplicationName"},"Lifecycle-hook"]]},
+          "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+          "NotificationTargetARN": {"Ref": "SNSTopicARN"},
+          "NotificationMetadata": {"Ref": "ECSCluster"},
+          "RoleARN": {"Ref": "IAMRoleARN"}
+        }
+      ],
+      "MaxSize" : {"Ref": "MaxCapacity"},
+      "MetricsCollection" : [ {"Granularity" : "1Minute"} ],
+      "MinSize" : {"Ref": "MinCapacity"},
+      "MixedInstancesPolicy" : {
+        "InstancesDistribution" : {
+            "OnDemandAllocationStrategy" : "prioritized",
+            "OnDemandBaseCapacity" : {"Ref": "OnDemandBaseNumber"},
+            "OnDemandPercentageAboveBaseCapacity" : {"Ref": "OnDemandPercentageAboveBase"},
+            "SpotAllocationStrategy" : "capacity-optimized",
+          },
+        "LaunchTemplate" : {
+          "LaunchTemplateSpecification" : {"Ref": "ECSCluster_LaunchTemplate"},
+          "Overrides" : [{"InstanceType" : String}]
+        }
+      },
+      "Tags" : [
+        { "Key" : "ECS_Cluster", "Value" : {"Fn::Join": ["-",[{"Ref": "Product"},{"Ref": "ApplicationName"}]]}, "PropagateAtLaunch": "true" },
+        { "Key": "Name", "Value": { "Fn::Join": ["-",[{"Ref": "Product"},{"Ref": "ApplicationName"},"ECS-EC2"]]}, "PropagateAtLaunch": "true"},
+        { "Key": "Environment", "Value": {"Ref": "Environment"},"PropagateAtLaunch": "true"},
+        { "Key": "Platform", "Value": "Linux","PropagateAtLaunch": "true"},
+        { "Key": "Product", "Value": {"Ref": "Product"}, "PropagateAtLaunch": "true"},
+        { "Key": "Application", "Value": {"Ref": "ApplicationName"},"PropagateAtLaunch": "true"}, 
+        { "Key": "ApplicationRole", "Value": {"Fn::Join": ["-",[{"Ref": "EC2Subnets"},"Server"]]},"PropagateAtLaunch": "true"},
+        { "Key": "ProductOwner", "Value": {"Ref": "ProductOwnerEmail"},"PropagateAtLaunch": "true"},
+        { "Key": "ApplicationOwner", "Value": {"Ref": "ApplicationOwnerEmail"},"PropagateAtLaunch": "true"},        
+        { "Key": "Purpose", "Value": {"Ref": "Purpose"}, "PropagateAtLaunch": "true"}
+         ],
+      "TerminationPolicies" : ["OldestInstance"],
+      "VPCZoneIdentifier" : {"Fn::If":["EC2SubnetSelector", {"Ref":"WebSubnets"}, {"Ref":"ApplicationSubnets"}]},
+    },
+    "CreationPolicy": {
+      "ResourceSignal": {
+        "Timeout": "PT15M"
+      }
+    },
+    "UpdatePolicy": {
+      "AutoScalingReplacingUpdate": {
+        "WillReplace": "true"
+      }
+    }
+}
