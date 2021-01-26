@@ -1,0 +1,100 @@
+{
+  "family": "prod-odoo-ejam",
+  "networkMode": "awsvpc",
+  "volumes": [
+    {
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-xxxxxxxx",
+        "authorizationConfig": {
+          "iam": "DISABLED",
+          "accessPointId": "fsap-xxxxxxxx"
+        },
+        "transitEncryption": "ENABLED",
+        "rootDirectory": "/"
+      },
+      "name": "prod_ejam_filestore"
+    },
+    {
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-xxxxxxxx",
+        "authorizationConfig": {
+          "iam": "DISABLED",
+          "accessPointId": "fsap-xxxxxxxx"
+        },
+        "transitEncryption": "ENABLED",
+        "rootDirectory": "/"
+      },
+      "name": "prod_ejam_config"
+    }
+  ],
+  "containerDefinitions": [
+    {
+      "name": "prod-ejam-container",
+      "image": "123456789.dkr.ecr.us-east-1.amazonaws.com/ejam-odoo:image_tag",
+      "portMappings": [
+        {
+          "containerPort": 8069,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+       "environment": [
+        {
+          "name": "HOST",
+          "value": "prod-ejam.cluster-xxxxxxxx.us-east-1.rds.amazonaws.com"
+        },
+        {
+          "name": "PASSWORD",
+          "value": "xxxxxxxx"
+        },
+        {
+          "name": "PORT",
+          "value": "5432"
+        },
+        {
+          "name": "USER",
+          "value": "xxxxxxxx"
+        }
+      ],
+      "mountPoints": [
+        {
+          "containerPath": "/var/lib/odoo",
+          "sourceVolume": "prod_ejam_filestore"
+        },
+        {
+          "containerPath": "/etc/odoo",
+          "sourceVolume": "prod_ejam_config"
+        }
+      ],
+      "logConfiguration": {
+          "logDriver": "awslogs",
+		  "options": 
+            {
+		      "awslogs-group": "prod-odoo-ejam",
+		      "awslogs-region": "us-east-1",
+		      "awslogs-stream-prefix": "prod-odoo-ejam"
+		    }
+        }
+    }
+  ],
+  "executionRoleArn" : "arn:aws:iam::xxxxxxxx:role/ecsTaskExecutionRole",
+  "tags" : [ 
+      {
+          "key" : "Environment",
+          "value" : "prod"
+      },
+      {
+          "key" : "Product",
+          "value" : "odoo"
+      },
+      {
+          "key" : "Name",
+          "value" : "prod-ejam-odoo"
+      }
+    ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "2048"
+}
