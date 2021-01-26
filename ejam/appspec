@@ -1,0 +1,22 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /odoo/custom/ejamodoo
+hooks:
+  BeforeBlockTraffic:
+    - location: scripts/install_dependencies.sh
+      timeout: 30
+      runas: root
+  BlockTraffic:
+    - location: scripts/change_permissions.sh
+      timeout: 30
+      runas: root
+  AfterBlockTraffic:
+    - location: scripts/change_permissions.sh
+      timeout: 30
+      runas: root
+  ApplicationStop:
+    - location: scripts/stop_server.sh
+      timeout: 30
+      runas: root
